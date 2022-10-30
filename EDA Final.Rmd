@@ -1,0 +1,425 @@
+---
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+Exploratory analysis for the term deposits Bank marketing campaign 
+
+#install packages:
+# install.packages("ggplot2")
+# install.packages("dplyr")
+# install.packages("reshape")
+# install.packages("corrplot")
+# install.packages("rcompanion")
+# install.packages("car")
+# install.packages("lattice")
+# install.packages("vcd")
+# install.packages("cramer")
+```{r}
+library(vcd)
+library(corrplot)
+library(ggplot2)
+library(dplyr)
+library(reshape)
+library(rcompanion)
+library(lattice)
+library(car)
+library(scales)
+library(cramer)
+```
+
+###############################################################################
+#Upload the Dataset:
+```{r}
+URL<-("https://raw.githubusercontent.com/MaramShriem/-Marketing-Dataset/main/bank-full.csv")
+Dataset<-read.csv(file=URL,header=T,sep=";",na.strings = c(" ","NA"))
+```
+
+#Checking NAs':
+```{r}
+anyNA(Dataset)
+#no missing values.
+```
+#Check duplicates:
+
+```{r}
+sum(duplicated(Dataset))
+#no duplicate values.
+```
+
+#Show the first 6 rows:
+```{r}
+head(Dataset)
+```
+#What is the data type, number of columns and number of rows?
+```{r}
+str(Dataset)
+```
+#I have 10 categorical variables 7 numeric variables.
+```{r}
+summary(Dataset)
+```
+#What are the unique instances for the categorical variables?
+```{r}
+unique(Dataset$job)
+unique(Dataset$marital)
+unique(Dataset$education)
+unique(Dataset$default)
+unique(Dataset$housing)
+unique(Dataset$loan)
+unique(Dataset$contact)
+unique(Dataset$month)
+unique(Dataset$poutcome)
+unique(Dataset$y)
+```
+#What is the percentage of customers who will subscribe the product?
+```{r}
+YesCust<-length(nrow(Dataset)[Dataset$y=="yes"])
+round(YesCust/nrow(Dataset)*100,2)
+```
+#Plot the count of the desired column y.
+```{r}
+ycol<-ggplot(Dataset, aes(y))
+ycol + geom_bar(color = "black",fill = "light blue") + theme(text = element_text(size=10))
+```
+#or the class distribution 
+```{r}
+table<-data.frame(prop.table(table(Dataset$y)))
+table$Freq<-round((table$Freq)*100,2)
+names(table)[names(table) == 'Var1'] <- 'Subscriber'
+
+ggplot(data=table, aes(x=Subscriber, y=Freq)) +
+  geom_bar(stat="identity", fill=c("orange","light sky blue"))+
+  geom_text(aes(label=Freq), vjust=-0.3, size=3.5)+
+  theme_minimal()
+
+#That means the data is imbalanced.
+```
+#################################################################################
+          Analyzing the numeric variables ( we have 7 numeric attributes):
+#################################################################################
+#What are the means and the means distribution for the numerical independent variables on the ys column:
+```{r}
+NumIndVar<-Dataset[,c(1,6,10,12,13,14,15,17)]
+MD<-data.frame(aggregate(.~y,mean,data=NumIndVar))
+MD
+
+dfm<- melt(MD[,-c(8)], id.vars= 1)
+
+
+ggplot(dfm,aes(x = y, y = value),ylab="Mean") + 
+  geom_bar(aes(fill = variable),stat = "identity",position = "dodge")+labs(y= "Mean")
+#balance, duration and pdays have changed obviously.
+```
+#Correlation for numeric variables:
+```{r}
+DS<-Dataset
+DS$y<-ifelse(DS$y=="yes",1,0)
+
+vars  <- c("age","balance","day","duration","campaign","pdays","previous","y") 
+m<-DS[vars]
+
+corrplot(cor(m),method="number")
+
+#in General the correlation between the variables is week except there is a slight positive relationship between the y variable( dependent var) and the duration. 
+#so let us take a deeper look in this relationship between variable y and the duration.
+```
+#Analyze the distribution of the duration variable  over the y variable
+```{r}
+#convert the duration seconds to minutes:
+Dataset$durationMin<-  round(Dataset$duration/30)
+
+summary(Dataset$durationMin)
+#based on the results i decided to create 5 brackets as i considered the duration over 11 min as an outlier
+
+Dataset$duration_Brkts <- cut(Dataset$durationMin,
+                              breaks=c(-1,0,1,3,6,11,164))
+
+
+Dataset$duration_Brkts<-as.character(Dataset$duration_Brkts)
+unique(Dataset$duration_Brkts)
+
+Dataset$duration_Brkts<-ifelse(Dataset$duration_Brkts=="(-1,0]","0",Dataset$duration_Brkts)
+unique(Dataset$duration_Brkts)
+
+#getwd()
+#write.csv(Dataset,file="Dataset.csv")
+
+#bar plot to display the distribution of duration_Brkts over the class variable.
+
+Dataset$y <- factor(Dataset$y)
+
+other_table<-table(Dataset$duration_Brkts,Dataset$y)
+
+barplot(other_table,
+        main = "duration_Brkts Distribution",
+        xlab = "y?", ylab = "Frequency",
+        col = c("rosybrown", "darkseagreen", "cornflowerblue","royalblue","lavender","thistle"),
+        legend.text = rownames(other_table),
+        beside = TRUE) # Grouped bars
+#or
+barplot(other_table,
+        main = "duration_Brkts Distribution",
+        xlab = "y?", ylab = "Frequency",
+        col = c("rosybrown", "darkseagreen", "cornflowerblue","royalblue","lavender","thistle"),
+        legend.text = rownames(other_table),
+        beside = FALSE) # Stacked bars (default)
+
+##results:
+#call duration =0 and (0,1])  means they will not subscribe the product
+#most clients who decided to purchase the  product had a call duration between 11-164 minutes.
+```
+#Correlation test between y and duration variable:
+```{r}
+cor.test(DS$y,DS$duration)
+#the P-value is less than 0.05 which means the relationship is statistically significant. 
+```
+#Lets check the age distribution:
+```{r}
+ggplot(Dataset, aes(x=age))+
+  ggtitle("age Destribution")+ 
+  xlab("age")+ 
+  ylab("Density")+
+  theme_bw()+#to make the background in a white color
+  geom_histogram(aes(y=..density..),binwidth=5,color="light blue",fill='light blue')+
+  geom_density(linetype="solid",color="black",adjust=1,size=1)
+
+#test age normality:
+
+#PS: Shapiro function is to test normality of the variable
+#(if the the distribution is normal the  P-Value should be greater than 0.05) 
+
+set.seed(10)
+x<-sample(Dataset$age,5000)
+shapiro.test(x)
+
+#age: not normal distribution and the age is between 30 and 45
+```
+#Lets check the balance distribution:
+```{r}
+ggplot(Dataset, aes(x=balance) )+
+  ggtitle("balance Destribution")+ 
+  xlab("balance")+ 
+  ylab("Density")+
+  xlim(0,1000)+
+  theme_bw()+#to make the background in a white color
+  geom_histogram(aes(y=..density..),binwidth=5,color="yellow",fill='#A4A4A4')+
+  geom_density(linetype="solid",color="black",adjust=1,size=1)
+
+#test age normality:
+
+#PS: Shapiro function is to test normality of the variable
+#(if the the distribution is normal the  P-Value should be greater than 0.05) 
+
+set.seed(10)
+x<-sample(Dataset$balance,5000)
+shapiro.test(x)
+
+#balance: not normal distribution.
+```
+#Lets check the day distribution:
+```{r}
+ggplot(Dataset, aes(x=day) )+
+  ggtitle("day Destribution")+ 
+  xlab("day")+ 
+  ylab("Density")+
+  theme_bw()+#to make the background in a white color
+  geom_histogram(aes(y=..density..),binwidth=5,color="yellow",fill='#A4A4A4')+
+  geom_density(linetype="solid",color="black",adjust=1,size=1)
+
+#test age normality:
+
+#PS: Shapiro function is to test normality of the variable
+#(if the the distribution is normal the  P-Value should be greater than 0.05) 
+
+set.seed(10)
+x<-sample(Dataset$day,5000)
+shapiro.test(x)
+
+#day: not normal distribution.
+```
+#Lets check the duration distribution:(last call duration)
+```{r}
+ggplot(Dataset, aes(x=duration) )+
+  ggtitle("duration Destribution")+ 
+  xlab("duration")+ 
+  ylab("Density")+
+  xlim(0,350)+
+  theme_bw()+#to make the background in a white color
+  geom_histogram(aes(y=..density..),binwidth=5,color="yellow",fill='#A4A4A4')+
+  geom_density(linetype="solid",color="black",adjust=1,size=1)
+
+#test age normality:
+
+#PS: Shapiro function is to test normality of the variable
+#(if the the distribution is normal the  P-Value should be greater than 0.05) 
+
+set.seed(15)
+x<-sample(Dataset$duration,5000)
+shapiro.test(x)
+
+#duration: not normal distribution.
+```
+#Lets check the campaign distribution:(campaign is the number of call during this campaign)
+```{r}
+ggplot(Dataset, aes(x=campaign) )+
+  ggtitle("campaign Destribution")+ 
+  xlab("campaign")+ 
+  ylab("Density")+
+  xlim(0,20)+
+  theme_bw()+#to make the background in a white color
+  geom_histogram(aes(y=..density..),binwidth=5,color="yellow",fill='#A4A4A4')+
+  geom_density(linetype="solid",color="black",adjust=1,size=1)
+
+#test age normality:
+
+#PS: Shapiro function is to test normality of the variable
+#(if the the distribution is normal the  P-Value should be greater than 0.05) 
+
+set.seed(20)
+x<-sample(Dataset$campaign,5000)
+shapiro.test(x)
+
+#campaign: not normal distribution.
+```
+#Lets check the pdays distribution:(pdays is the number of days that passed by after the client was last contacted from a previous campaign)
+```{r}
+ggplot(Dataset, aes(x=pdays) )+
+  ggtitle("pdays Destribution")+ 
+  xlab("pdays")+ 
+  ylab("Density")+
+  xlim(0,75)+
+  theme_bw()+#to make the background in a white color
+  geom_histogram(aes(y=..density..),binwidth=5,color="yellow",fill='#A4A4A4')+
+  geom_density(linetype="solid",color="black",adjust=1,size=1)
+
+#test age normality:
+
+#PS: Shapiro function is to test normality of the variable
+#(if the the distribution is normal the  P-Value should be greater than 0.05) 
+
+set.seed(20)
+x<-sample(Dataset$pdays,5000)
+shapiro.test(x)
+
+#pdays: not normal distribution.
+```
+#Boxplot to check outliars:
+```{r}
+boxplot(Dataset$age,outcol="red",pch=23,whiskcol="rosybrown",col="rosybrown",names = "age")
+boxplot(Dataset$balance,outcol="red",pch=23,whiskcol="lightblue",col="lightblue",names = "balance",ylim= c(0, 10000))
+boxplot(Dataset$day,outcol="red",pch=23,whiskcol="cyan",col="cyan",names = "day")
+boxplot(Dataset$duration,outcol="red",pch=23,whiskcol="palegreen",col="palegreen",names = "duration")
+boxplot(Dataset$campaign,outcol="red",pch=23,whiskcol="chocolate",col="chocolate",names = "campaign")
+boxplot(Dataset$pdays,outcol="red",pch=23,whiskcol="seagreen",col="seagreen",names = "pdays")
+boxplot(Dataset$previous,outcol="red",pch=23,whiskcol="seagreen",col="seagreen",names = "previous")
+```
+         #Categorical variable correlation Matrix#
+#Cramer V is Used to calculate the correlation/association between nominal categorical variables.
+```{r}
+# 0: The variables are not associated
+#- 1: The variables are perfectly associated
+#- 0.25: The variables are weakly associated
+#- .75: The variables are moderately associated
+
+vars  <- c("job","marital","education","default","housing","loan","contact","month","poutcome","y")
+df <- Dataset[vars]
+# Initialize empty matrix to store coefficients
+empty_m <- matrix(ncol = length(df),
+                  nrow = length(df),
+                  dimnames = list(names(df), 
+                                  names(df)))
+
+
+# Function that accepts matrix for coefficients and data and returns a correlation matrix
+calculate_cramer <- function(m, df) {
+  for (r in seq(nrow(m))){
+    for (c in seq(ncol(m))){
+      m[[r, c]] <- assocstats(table(df[[r]], df[[c]]))$cramer
+    }
+  }
+  return(m)
+}
+
+cor_matrix <- calculate_cramer(empty_m ,df)
+
+corrplot(cor_matrix,method="number")
+#only poutcome and month have a weak association with the dependent variable y.
+#month and housing are a very correlated variables.
+#education and job are a very correlated variables.
+#contact and month are a very correlated variables.
+```
+#Merge the housing and the loan variables together and recheck the correlation:
+```{r}
+DS<-Dataset
+DS$Totalloans<-ifelse(DS$housing=="yes","yes",ifelse(DS$loan=="yes","yes","no"))
+DS$y<-factor(DS$y)
+cramerV(DS$Totalloans,DS$y)
+
+Df<-DS
+Df$Totalloans<-ifelse(Df$Totalloans=="yes",1,0)
+Df$y<-ifelse(Df$y=="yes",1,0)
+cor.test(Df$Totalloans,Df$y)
+
+#correlation is negative weak relationship but statistically significant (the Pvalue is less than 0.05)
+```
+#Marital Status percentages over the desired variable y###
+```{r}
+DS<-Dataset
+DS$y<-ifelse(DS$y=="yes",1,0)
+
+subDiv<-round((aggregate(DS$y,by=list(DS$marital),sum)[1,2]/length(which(DS$y==1))),3)
+subMarr<-round((aggregate(DS$y,by=list(DS$marital),sum)[2,2]/length(which(DS$y==1))),3)
+subsin<-round((aggregate(DS$y,by=list(DS$marital),sum)[3,2]/length(which(DS$y==1))),3)
+subDiv<-label_percent()(subDiv)
+subMarr<-label_percent()(subMarr)
+subsin<-label_percent()(subsin)
+
+NsubDiv<-round((length(which(DS$marital=="divorced"))-aggregate(DS$y,by=list(DS$marital),sum)[1,2])/length(which(DS$y==0)),4)
+NsubMarr<-round((length(which(DS$marital=="married"))-aggregate(DS$y,by=list(DS$marital),sum)[2,2])/length(which(DS$y==0)),4)
+Nsubsin<-round((length(which(DS$marital=="single"))-aggregate(DS$y,by=list(DS$marital),sum)[3,2])/length(which(DS$y==0)),4)
+NsubDiv<-label_percent()(NsubDiv)
+NsubMarr<-label_percent()(NsubMarr)
+Nsubsin<-label_percent()(Nsubsin)
+
+ggplot(Dataset,aes(x=y,fill=marital))+
+  geom_bar(colour="black",width = .9)+
+  theme_classic(base_size = 11)+# background theme
+  labs(y="Number of customers",x="y?",title ="marital Status Over ys" )+
+  annotate(geom="text",x=2, y=1000, label=subsin)+
+  annotate(geom="text",x=2, y=3000, label=subMarr)+
+  annotate(geom="text",x=2, y=6000, label=subDiv)+
+  annotate(geom="text",x=1, y=5000, label=Nsubsin)+
+  annotate(geom="text",x=1, y=20000, label=NsubMarr)+
+  annotate(geom="text",x=1, y=37000, label=NsubDiv)
+```
+#Distribution of the marital status:
+```{r}
+m<-as.data.frame(table(Dataset$marital))
+ycol<-ggplot(m, aes(x=Var1,y=Freq,fill=Var1))
+ycol + geom_bar(color = "black",fill = "light gray",stat="identity") +geom_text(aes(label=Freq),vjust=0)
+```
+#Categorical distribution over the class y
+```{r}
+attach(Dataset)
+ggplot(Dataset, aes(education, ..count..)) + geom_bar(aes(fill = y), position = "dodge")
+ggplot(Dataset, aes(marital, ..count..)) + geom_bar(aes(fill = y), position = "dodge")
+ggplot(Dataset, aes(job, ..count..)) + geom_bar(aes(fill = y), position = "dodge")
+ggplot(Dataset, aes(contact, ..count..)) + geom_bar(aes(fill = y), position = "dodge")
+ggplot(Dataset, aes(month, ..count..)) + geom_bar(aes(fill = y), position = "dodge")
+ggplot(Dataset, aes(poutcome, ..count..)) + geom_bar(aes(fill = y), position = "dodge")
+```
+#EDA between some independent variables:
+```{r}
+ggplot(Dataset, aes(x=marital, y=age)) + geom_boxplot(fill=c('light blue','darkslategray1','turquoise'))
+#The plot shows that the average age of unmarried clients is significantly lower than that of the other clients.
+
+ggplot(Dataset, aes(x=age, y=job),width =0.4) + geom_boxplot(fill=c("ivory","cadetblue","honeydew","darkslategray1","darkslateblue","darksalmon","lightcoral","lightcyan3","khaki","lavender","thistle2","turquoise"))
+#the age of the most retired customers are between 60 and 27 for students 
+
+ggplot(Dataset, aes(x=y, y=age)) + geom_boxplot(fill=c('light blue','turquoise'))
+```
+
+
+
