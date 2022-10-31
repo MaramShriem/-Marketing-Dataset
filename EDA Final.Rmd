@@ -400,11 +400,22 @@ m<-as.data.frame(table(Dataset$marital))
 ycol<-ggplot(m, aes(x=Var1,y=Freq,fill=Var1))
 ycol + geom_bar(color = "black",fill = "light gray",stat="identity") +geom_text(aes(label=Freq),vjust=0)
 ```
+
+#Poutcome attribute distribution: 
+
+```{r}
+aggregate(Dataset$poutcome,list(Dataset$poutcome),FUN=length)
+#the count of "unknown" value equals 36,959 (82%)
+```
 #Categorical distribution over the class y
 ```{r}
 attach(Dataset)
 ggplot(Dataset, aes(education, ..count..)) + geom_bar(aes(fill = y), position = "dodge")
 ggplot(Dataset, aes(marital, ..count..)) + geom_bar(aes(fill = y), position = "dodge")
+```
+
+
+```{r}
 ggplot(Dataset, aes(job, ..count..)) + geom_bar(aes(fill = y), position = "dodge")
 ggplot(Dataset, aes(contact, ..count..)) + geom_bar(aes(fill = y), position = "dodge")
 ggplot(Dataset, aes(month, ..count..)) + geom_bar(aes(fill = y), position = "dodge")
