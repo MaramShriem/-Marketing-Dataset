@@ -24,28 +24,28 @@ SMOTE
 2. Data Balancing: (SMOTE)
 3. SMOTE- Random Forest Hyperparameter Tuning (based on max depth, number of trees and F1-Score)
 4. SMOTE- Decision Tree Hyperparameter Tuning (based on max depth and F1-Score)
-3. SMOTE- Logistic Regression Hyperparameter Tuning (based on Max Iteration, Solver and F1-Score)
-5. SMOTE- Train the model and calculate the run time of training the model
-6. SMOTE- Run Time for prediction
-7. SMOTE- Confusion Matrix
-8. SMOTE- Calculate the AUROC
-9. SMOTE- Summary (ACC,Recall, specificity,AUC,MCC, brier_score_loss,F1 Score, run time) for the models
-10. SMOTE- Check Over/Underfitting
-11. SMOTE Summary without Tuning
+5. SMOTE- Logistic Regression Hyperparameter Tuning (based on Max Iteration, Solver and F1-Score)
+6. SMOTE- Train the model and calculate the run time of training the model
+7. SMOTE- Run Time for prediction
+8 SMOTE- Confusion Matrix
+9. SMOTE- Calculate the AUROC
+10. SMOTE- Summary (ACC,Recall, specificity,AUC,MCC, brier_score_loss,F1 Score, run time) for the models
+11. SMOTE- Check Over/Underfitting
+12. SMOTE Summary without Tuning
 
 Random Undersampling (RUS)
 1. RUS Hyperparameter Tuning (based on Sampling strategy and F1-Score)
 2. Data Balancing: (Random UnderSampling)
 3.RUS- Random Forest Hyperparameter Tuning (based on max depth, number of trees and F1-Score)
 4. RUS- Decision Tree Hyperparameter Tuning (based on max depth and F1-Score)
-3.RUS- Logistic Regression Hyperparameter Tuning (based on max Iteration, Solver, and F1-Score)
-5. RUS- Train the model and calculate the run time of training the model
-6. RUS- Run Time for prediction
-7. RUS- Confusion Matrix
-8.RUS- Calculate the AUROC
-9. RUS- Summary (ACC,Recall, specificity,AUC,MCC, brier_score_loss, F1 Score, run time) for the models
-10. RUS- Check Over/Underfitting
-11. RUS Summary without Tuning
+5.RUS- Logistic Regression Hyperparameter Tuning (based on max Iteration, Solver, and F1-Score)
+6. RUS- Train the model and calculate the run time of training the model
+7. RUS- Run Time for prediction
+8. RUS- Confusion Matrix
+9.RUS- Calculate the AUROC
+10. RUS- Summary (ACC,Recall, specificity,AUC,MCC, brier_score_loss, F1 Score, run time) for the models
+11. RUS- Check Over/Underfitting
+12. RUS Summary without Tuning
 
 Random Forest Feature Importance
 Decision Tree Feature Importance
