@@ -51,7 +51,7 @@ Random Forest Feature Importance
 Decision Tree Feature Importance
 
 
-Comparisons for some evaluation metrices:
-Before SMOTE vs After SMOTE
-Before RUS vs After RUS
-SMOTE VS RUS
+Comparisons for some evaluation metrices based on the balancing techniques (Accuracy, Sensetivity, Specificity, ROC_AUC, MCC, Brier Score , F1 score)
+1. Before SMOTE vs After SMOTE
+2. Before RUS vs After RUS
+2. SMOTE VS RUS
