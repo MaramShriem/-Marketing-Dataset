@@ -1,4 +1,4 @@
-# -The tentative stages of the project
+# -The Tentative Stages of the Project
 
 Import the Dataset
 
